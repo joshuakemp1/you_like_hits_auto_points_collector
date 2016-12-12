@@ -1,7 +1,7 @@
 require 'selenium-webdriver'
 
 @you_like_hits_url = 'http://www.youlikehits.com/'
-@login_username = 'YOUR USER NAME'
+@login_username = 'YOUR USERNAME'
 @login_pass = 'YOUR PASSWORD'
 @login_button = '.maintable table input'
 @stats_url = 'http://www.youlikehits.com/stats.php'
@@ -9,6 +9,17 @@ require 'selenium-webdriver'
 @view_button = '.followbutton'
 @timer = 'span font'
 @timer_number = 'font span'
+@already_viewed_text_1 = 'You already viewed this video.'
+@already_viewed_text_2 = 'You watched '
+@skip = '#listall br+ a'
+@video_name = '#listall font'
+@video_text = ''
+@limit_reached_text = 'Views Limit Reached'
+@limit_reached_text_body = 'You have reached your hourly views limit. You can only view up to 30 videos every hour. This limit is in place to keep the views from being incorrectly marked and removed as spam.'
+@skipped_text = 'You skipped this video.'
+@points_text = '#showresult'
+
+# Start of navigation
 
 @session = Selenium::WebDriver.for :firefox
 @session.navigate.to @you_like_hits_url
@@ -60,32 +71,41 @@ def navigate_youtube
   @session.navigate.to @youtube_url
 end
 
+# End Navigation
+
+# Start of automation logic
+
 def start_viewing
   if @session.current_url != @youtube_url
     navigate_youtube
   end
-
-  def click_view_button
-    sleep 10
-    @session.find_element(:css, @view_button).click
-    timer_checker
-  end
-
-  def timer_checker
-    until true
-      if @session.find_element(:css, @timer).displayed?
-        if @session.find_element(:css, @timer_number).text != '0'
-          sleep 5
-        end
-      end
-    end
-    click_view_button
-  end
 end
+
+def click_view_button
+  sleep 10
+  @session.find_element(:css, @view_button).click
+  skip
+end
+
+def skip
+  sleep 100
+  @session.find_element(:css, @skip).click
+  sleep 5
+  click_view_button
+end
+
+# End of automation logic
+
+  def check_limit
+    if @session.page_source.include?(@limit_reached_text || @limit_reached_text_body)
+      puts "We hit our user's limit!"
+      # switch_users add more users to automatically switch to after limit is reached
+    end
+  end
 
 login_as(@login_username, @login_pass)
 stats_check
 navigate_youtube
 start_viewing
 click_view_button
-timer_checker
+skip
